@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='oblivious-transfer',
     version='',
-    packages=[''],
+    packages=['ot'],
     url='https://github.com/kennedyjosh/oblivious-transfer',
     license='',
     author='josh',
