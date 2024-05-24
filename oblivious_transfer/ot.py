@@ -131,9 +131,7 @@ class Bob:
         G = next_prime(self.pubkey.n)
         f = lagrange(self.des_messages, T, G)
 
-        string_f = [str(x) for x in f]
-
-        return string_f
+        return f
 
     def receive(self, G):
         decrypted = []
