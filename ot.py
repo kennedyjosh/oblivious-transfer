@@ -1,7 +1,6 @@
 import rsa
 from hashlib import sha256
 from itertools import combinations
-from json_stuff import *
 from random import SystemRandom
 from next_prime import next_prime
 from mulinv import mulinv
@@ -65,10 +64,16 @@ def compute_poly(f, x, m):
     return y % m
 
 class Alice:
-    def __init__(self, M, t, secret_length):
+    def __init__(self, M: [bytes], t: int):
+        """
+        Args:
+            M: list of messages that Bob will choose from
+            t: number of messages that Bob can choose
+        """
+        secret_length = len(M[0])
         assert secret_length < RSA_bits//8, "Secret length too long for RSA key size"
         for m in M:
-            assert len(m) == secret_length, "Messages must have same length as secret_length"
+            assert len(m) == secret_length, "Messages must all be same length"
         self.M = M
         self.t = t
         self.secret_length = secret_length
@@ -83,18 +88,14 @@ class Alice:
         for m in self.M:
             self.hashes.append(hasher(m))
 
-    def setup(self, file_name = "alice_setup.json"):
-        j = {
-                "pubkey": {"e": self.pubkey.e, "n": self.pubkey.n},
-                "hashes": self.hashes,
-                "secret_length": self.secret_length,
-                }
+    def setup(self):
+        return {
+            "pubkey": {"e": self.pubkey.e, "n": self.pubkey.n},
+            "hashes": self.hashes,
+            "secret_length": self.secret_length
+        }
 
-        write_json(file_name, j)
-        print("Pubkey and hashes published.")
-
-    def transmit(self, file_name = "alice_dec.json", bob_file_name = "bob_setup.json"):
-        f = list(map(int, read_json(bob_file_name)))
+    def transmit(self, f):
         assert len(f) == self.t, "Bob is requesting a different number of messages than expected"
 
         G = []
@@ -102,19 +103,23 @@ class Alice:
             F = pow(compute_poly(f, i, self.G), self.privkey.d, self.pubkey.n)
             G.append((F * bytes_to_int(self.M[i])) % self.pubkey.n)
 
-        write_json(file_name, G)
-        print("G has been published.")
+        return G
+
 
 class Bob:
     def __init__(self, des_messages):
+        """
+        Args:
+            des_messages: the indices of the messages Bob wants to obtain
+        """
         self.num_des_messages = len(des_messages)
         self.des_messages = des_messages
 
-    def setup(self, file_name="bob_setup.json", alice_file_name="alice_setup.json"):
-        alice = read_json(alice_file_name)
-        self.pubkey = rsa.PublicKey(alice["pubkey"]["n"], alice["pubkey"]["e"])
-        self.hashes = alice["hashes"]
-        self.secret_length = alice["secret_length"]
+    def setup(self, pubkey_e, pubkey_n, hashes, secret_length):
+
+        self.pubkey = rsa.PublicKey(pubkey_n, pubkey_e)
+        self.hashes = hashes
+        self.secret_length = secret_length
 
         self.R = []
         T = []
@@ -128,13 +133,9 @@ class Bob:
 
         string_f = [str(x) for x in f]
 
-        write_json(file_name, string_f)
-        print("Polynomial published.")
+        return string_f
 
-    def receive(self, alice_file_name = "alice_dec.json"):
-        alice = read_json(alice_file_name)
-        G = alice
-
+    def receive(self, G):
         decrypted = []
         for j in range(self.num_des_messages):
             d = moddiv(G[self.des_messages[j]], self.R[j], self.pubkey.n)
@@ -145,7 +146,7 @@ class Bob:
                 print("Hashes don't match. Either something messed up or Alice is up to something.")
 
         self.decrypted = decrypted
-        return(decrypted)
+        return decrypted
 
 
 if __name__ == "__main__":
