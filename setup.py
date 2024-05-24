@@ -1,9 +1,9 @@
 from distutils.core import setup
 
 setup(
-    name='oblivious-transfer',
+    name='oblivious_transfer',
     version='1.0',
-    packages=['oblivious-transfer'],
+    packages=['oblivious_transfer'],
     url='https://github.com/kennedyjosh/oblivious-transfer',
     license='MIT',
     author='josh',
