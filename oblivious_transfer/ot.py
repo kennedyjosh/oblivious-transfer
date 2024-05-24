@@ -2,8 +2,8 @@ import rsa
 from hashlib import sha256
 from itertools import combinations
 from random import SystemRandom
-from next_prime import next_prime
-from mulinv import mulinv
+from oblivious_transfer.next_prime import next_prime
+from oblivious_transfer.mulinv import mulinv
 
 RSA_bits = 512
 
